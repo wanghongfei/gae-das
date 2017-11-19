@@ -30,6 +30,16 @@ public class UpdateEventListener extends AggregationListener<UpdateRowsEventData
     }
 
     @Override
+    protected String getDbName() {
+        return "gae-das";
+    }
+
+    @Override
+    protected String getTargetTable() {
+        return "new_table";
+    }
+
+    @Override
     protected void doEvent(UpdateRowsEventData eventData, String dbName, String tableName) {
         System.out.println(dbName + ", " + tableName + ", " + eventData);
 

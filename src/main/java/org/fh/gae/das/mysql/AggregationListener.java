@@ -12,7 +12,7 @@ import org.springframework.util.StringUtils;
  * @param <T>
  */
 @Slf4j
-public class AggregationListener<T> implements BinaryLogClient.EventListener {
+public abstract class AggregationListener<T> implements BinaryLogClient.EventListener {
     private EventType targetEventType;
 
     private String dbName;
@@ -21,7 +21,7 @@ public class AggregationListener<T> implements BinaryLogClient.EventListener {
 
     /**
      * 构造对象时指定感兴趣的事件类型
-     * @param eventType
+     * @param eventType 传null表示对所有事件感兴趣
      */
     protected AggregationListener(EventType eventType) {
         this.targetEventType = eventType;
@@ -33,9 +33,11 @@ public class AggregationListener<T> implements BinaryLogClient.EventListener {
      * @param dbName 库名
      * @param tableName 表名
      */
-    protected void doEvent(T eventData, String dbName, String tableName) {
-        return;
-    }
+    protected abstract void doEvent(T eventData, String dbName, String tableName);
+
+    protected abstract String getDbName();
+
+    protected abstract String getTargetTable();
 
     @Override
     public void onEvent(Event event) {
@@ -43,12 +45,19 @@ public class AggregationListener<T> implements BinaryLogClient.EventListener {
         // 缓存表名和库名
         if (type == EventType.TABLE_MAP) {
             onTableMap(event);
+            return;
         }
 
+
         // 触发子类doEvent()方法, 传递表名库名
-        if (type == targetEventType) {
+        if (type == targetEventType || null == targetEventType) {
             if (StringUtils.isEmpty(dbName) || StringUtils.isEmpty(tableName)) {
                 log.error("no meta data event");
+                return;
+            }
+
+            if (!getDbName().equals(dbName) || !getTargetTable().equals(tableName)) {
+                log.info("filter {}:{}", dbName, tableName);
                 return;
             }
 

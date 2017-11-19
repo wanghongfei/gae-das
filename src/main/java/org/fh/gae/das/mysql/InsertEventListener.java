@@ -11,6 +11,16 @@ public class InsertEventListener extends AggregationListener<WriteRowsEventData>
     }
 
     @Override
+    protected String getDbName() {
+        return "gae-das";
+    }
+
+    @Override
+    protected String getTargetTable() {
+        return "acc";
+    }
+
+    @Override
     protected void doEvent(WriteRowsEventData eventData, String dbName, String tableName) {
         System.out.println(dbName + ", " + tableName + ", " + eventData);
     }
