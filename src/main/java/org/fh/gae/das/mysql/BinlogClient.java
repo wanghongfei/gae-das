@@ -3,6 +3,7 @@ package org.fh.gae.das.mysql;
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -14,6 +15,18 @@ import java.io.IOException;
 @Component
 @Slf4j
 public class BinlogClient {
+    @Value("${das.mysql.host}")
+    private String host;
+
+    @Value("${das.mysql.port}")
+    private int port;
+
+    @Value("${das.mysql.username}")
+    private String username;
+
+    @Value("${das.mysql.password}")
+    private String password;
+
     @Autowired
     private UpdateEventListener updateEventListener;
 
@@ -23,7 +36,7 @@ public class BinlogClient {
     @PostConstruct
     public void connect() throws IOException {
         new Thread(() -> {
-            BinaryLogClient logClient = new BinaryLogClient("127.0.0.1", 3306, "root", "");
+            BinaryLogClient logClient = new BinaryLogClient(host, port, username, password);
             logClient.registerEventListener(updateEventListener);
             logClient.registerEventListener(insertEventListener);
 
