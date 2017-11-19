@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: GAE-DAS
+
+das:
+  store:
+    file:
+      enable: true
+      path: index/incr.idx

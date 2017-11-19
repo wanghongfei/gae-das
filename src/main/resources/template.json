@@ -1,0 +1,42 @@
+{
+    "tableList": [
+        {
+            "tableName": "new_table",
+            "level": 1,
+
+            "insert": [
+                {"column": "id"},
+                {"column": "name"},
+                {"column": "age"}
+            ],
+            "update": [
+                {"column": "id"},
+                {"column": "name"},
+                {"column": "age"}
+            ],
+            "delete": [
+                {"column": "id"},
+                {"column": "name"},
+                {"column": "age"}
+            ]
+        },
+        {
+            "tableName": "acc",
+            "level": 1,
+
+            "insert": [
+                {"column": "id"},
+                {"column": "name"}
+            ],
+            "update": [
+                {"column": "id"},
+                {"column": "name"}
+            ],
+            "delete": [
+                {"column": "id"},
+                {"column": "name"}
+            ]
+        }
+
+    ]
+}
