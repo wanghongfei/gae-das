@@ -67,6 +67,6 @@ mysql连接信息和binlog同步设置见`application.yml`文件
 ## 构建运行
 ```
 mvn clean package -Dmaven.test.skip=true
-java -jar 
+java -jar gae-das.jar
 ```
 然后修改配置文件中的mysql连接信息和`template.json`模板即可
