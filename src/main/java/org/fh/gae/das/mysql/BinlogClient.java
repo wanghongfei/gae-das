@@ -3,7 +3,6 @@ package org.fh.gae.das.mysql;
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -15,17 +14,8 @@ import java.io.IOException;
 @Component
 @Slf4j
 public class BinlogClient {
-    @Value("${das.mysql.host}")
-    private String host;
-
-    @Value("${das.mysql.port}")
-    private int port;
-
-    @Value("${das.mysql.username}")
-    private String username;
-
-    @Value("${das.mysql.password}")
-    private String password;
+    @Autowired
+    private MysqlBinlogConfig config;
 
     @Autowired
     private UpdateEventListener updateEventListener;
@@ -36,7 +26,23 @@ public class BinlogClient {
     @PostConstruct
     public void connect() throws IOException {
         new Thread(() -> {
-            BinaryLogClient logClient = new BinaryLogClient(host, port, username, password);
+            BinaryLogClient logClient = new BinaryLogClient(
+                    config.getHost(),
+                    config.getPort(),
+                    config.getUsername(),
+                    config.getPassword()
+            );
+
+            String binlogName = config.getBinlogName();
+            if (!binlogName.isEmpty()) {
+                logClient.setBinlogFilename(binlogName);
+            }
+
+            long pos = config.getPosition().longValue();
+            if (pos != -1) {
+                logClient.setBinlogPosition(pos);
+            }
+
             logClient.registerEventListener(updateEventListener);
             logClient.registerEventListener(insertEventListener);
 

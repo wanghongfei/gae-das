@@ -95,6 +95,7 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
 
             } catch (Exception e) {
                 log.error(e.getMessage());
+
             } finally {
                 this.dbName = "";
                 this.tableName = "";
@@ -140,7 +141,7 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
         DasTable table = getTemplateHolder().getTable(tableName);
         if (null == table) {
             log.warn("table {} not found", tableName);
-            return null;
+            return MysqlRowData.empty;
         }
 
         Map<String, String> afterMap = new HashMap<>();
