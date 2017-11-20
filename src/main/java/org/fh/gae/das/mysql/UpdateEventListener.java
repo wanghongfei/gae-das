@@ -1,7 +1,6 @@
 package org.fh.gae.das.mysql;
 
 import com.github.shyiko.mysql.binlog.event.EventType;
-import com.github.shyiko.mysql.binlog.event.UpdateRowsEventData;
 import lombok.extern.slf4j.Slf4j;
 import org.fh.gae.das.sender.FileSender;
 import org.fh.gae.das.template.DasTable;
@@ -12,13 +11,12 @@ import org.fh.gae.das.template.level.TextDasLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 @Component
 @Slf4j
-public class UpdateEventListener extends AggregationListener<UpdateRowsEventData> {
+public class UpdateEventListener extends AggregationListener {
     @Autowired
     private TemplateHolder holder;
 
@@ -40,7 +38,11 @@ public class UpdateEventListener extends AggregationListener<UpdateRowsEventData
     }
 
     @Override
-    protected void doEvent(UpdateRowsEventData eventData, String dbName, String tableName) {
+    protected void doEvent(MysqlRowData eventData, String dbName, String tableName) {
+        if (null == eventData) {
+            return;
+        }
+
         System.out.println(dbName + ", " + tableName + ", " + eventData);
 
         DasTable table = holder.getTable(tableName);
@@ -61,30 +63,19 @@ public class UpdateEventListener extends AggregationListener<UpdateRowsEventData
             return;
         }
 
-        // 遍历行
-        for (Map.Entry<Serializable[], Serializable[]> entry : eventData.getRows()) {
-            // 取出新值
-            Serializable[] after = entry.getValue();
-            int colLen = after.length;
+        for (Map.Entry<String, String> entry : eventData.getAfter().entrySet()) {
+            String colName = entry.getKey();
+            String colValue = entry.getValue();
 
-            // 遍历值
-            for (int ix = 0; ix < colLen; ++ix) {
-                // 取出当前位置对应的列名
-                String colName = table.getPosMap().get(ix);
-                // 如果没有则说明不关心此列
-                if (null == colName) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("ignore position: {}", ix);
-                    }
 
-                    continue;
-                }
-
-                String colValue = after[ix].toString();
-                level.getFieldValueMap().put(colName, colValue);
-            }
+            level.getFieldValueMap().put(colName, colValue);
         }
 
         store.send(level);
+    }
+
+    @Override
+    protected TemplateHolder getTemplateHolder() {
+        return this.holder;
     }
 }

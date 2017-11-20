@@ -1,11 +1,15 @@
 package org.fh.gae.das.mysql;
 
 import com.github.shyiko.mysql.binlog.event.EventType;
-import com.github.shyiko.mysql.binlog.event.WriteRowsEventData;
+import org.fh.gae.das.template.TemplateHolder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class InsertEventListener extends AggregationListener<WriteRowsEventData> {
+public class InsertEventListener extends AggregationListener {
+    @Autowired
+    private TemplateHolder holder;
+
     public InsertEventListener() {
         super(EventType.WRITE_ROWS);
     }
@@ -21,7 +25,16 @@ public class InsertEventListener extends AggregationListener<WriteRowsEventData>
     }
 
     @Override
-    protected void doEvent(WriteRowsEventData eventData, String dbName, String tableName) {
+    protected void doEvent(MysqlRowData eventData, String dbName, String tableName) {
+        if (null == eventData) {
+            return;
+        }
+
         System.out.println(dbName + ", " + tableName + ", " + eventData);
+    }
+
+    @Override
+    protected TemplateHolder getTemplateHolder() {
+        return this.holder;
     }
 }

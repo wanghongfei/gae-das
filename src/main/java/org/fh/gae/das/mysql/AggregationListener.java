@@ -1,18 +1,31 @@
 package org.fh.gae.das.mysql;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
+import com.github.shyiko.mysql.binlog.event.DeleteRowsEventData;
 import com.github.shyiko.mysql.binlog.event.Event;
+import com.github.shyiko.mysql.binlog.event.EventData;
 import com.github.shyiko.mysql.binlog.event.EventType;
 import com.github.shyiko.mysql.binlog.event.TableMapEventData;
+import com.github.shyiko.mysql.binlog.event.UpdateRowsEventData;
+import com.github.shyiko.mysql.binlog.event.WriteRowsEventData;
 import lombok.extern.slf4j.Slf4j;
+import org.fh.gae.das.template.DasTable;
+import org.fh.gae.das.template.TemplateHolder;
 import org.springframework.util.StringUtils;
+
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 
 /**
  * listener继承此类, 可获得event的库名, 表名信息
- * @param <T>
  */
 @Slf4j
-public abstract class AggregationListener<T> implements BinaryLogClient.EventListener {
+public abstract class AggregationListener implements BinaryLogClient.EventListener {
     private EventType targetEventType;
 
     private String dbName;
@@ -33,10 +46,24 @@ public abstract class AggregationListener<T> implements BinaryLogClient.EventLis
      * @param dbName 库名
      * @param tableName 表名
      */
-    protected abstract void doEvent(T eventData, String dbName, String tableName);
+    protected abstract void doEvent(MysqlRowData eventData, String dbName, String tableName);
 
+    /**
+     * 子类覆盖此方法, 提供TemplateHolder对象
+     * @return
+     */
+    protected abstract TemplateHolder getTemplateHolder();
+
+    /**
+     * 感兴趣的库名
+     * @return
+     */
     protected abstract String getDbName();
 
+    /**
+     * 感兴趣的表名
+     * @return
+     */
     protected abstract String getTargetTable();
 
     @Override
@@ -62,19 +89,15 @@ public abstract class AggregationListener<T> implements BinaryLogClient.EventLis
             }
 
             log.info("trigger event {}", type.name());
-            T data = event.getData();
-
-            String dbName = this.dbName;
-            String tabName = this.tableName;
-
-            this.dbName = "";
-            this.tableName = "";
 
             try {
-                doEvent(data, dbName, tabName);
+                doEvent(buildRowData(event.getData()), dbName, tableName);
 
             } catch (Exception e) {
                 log.error(e.getMessage());
+            } finally {
+                this.dbName = "";
+                this.tableName = "";
             }
         }
     }
@@ -84,5 +107,73 @@ public abstract class AggregationListener<T> implements BinaryLogClient.EventLis
         this.tableName = data.getTable();
         this.dbName = data.getDatabase();
     }
+
+    /**
+     * 从binlog对象中取出最新的值列表
+     * @param eventData
+     * @return
+     */
+    private List<Serializable[]> getAfterValues(EventData eventData) {
+        if (eventData instanceof WriteRowsEventData) {
+            return ((WriteRowsEventData) eventData).getRows();
+        }
+
+        if (eventData instanceof UpdateRowsEventData) {
+            return ((UpdateRowsEventData) eventData).getRows().stream()
+                    .map( entry -> entry.getValue() )
+                    .collect(Collectors.toList());
+        }
+
+        if (eventData instanceof DeleteRowsEventData) {
+            return ((DeleteRowsEventData) eventData).getRows();
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * 将Biglog数据对象转换成MysqlRowData对象
+     * @param eventData
+     * @return
+     */
+    private MysqlRowData buildRowData(EventData eventData) {
+        DasTable table = getTemplateHolder().getTable(tableName);
+        if (null == table) {
+            log.warn("table {} not found", tableName);
+            return null;
+        }
+
+        Map<String, String> afterMap = new HashMap<>();
+        // 遍历行
+        for (Serializable[] after : getAfterValues(eventData)) {
+            // 取出新值
+            int colLen = after.length;
+
+            // 遍历值
+            for (int ix = 0; ix < colLen; ++ix) {
+                // 取出当前位置对应的列名
+                String colName = table.getPosMap().get(ix);
+                // 如果没有则说明不关心此列
+                if (null == colName) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("ignore position: {}", ix);
+                    }
+
+                    continue;
+                }
+
+                String colValue = after[ix].toString();
+
+                afterMap.put(colName, colValue);
+            }
+        }
+
+        MysqlRowData rowData = new MysqlRowData();
+        rowData.setAfter(afterMap);
+
+        return rowData;
+
+    }
+
 
 }
