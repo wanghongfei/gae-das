@@ -1,5 +1,5 @@
 # GAE-DAS
-监听mysql binlog并生成GAE使用的增量索引, 保存至本地文件或kafka中
+监听mysql binlog并生成GAE使用的增量索引, 保存至本地文件
 
 ## 模板
 通过配置模板`template.json`来指定索引如何生成:
@@ -33,7 +33,7 @@
         },
         {
             "tableName": "acc",
-            "level": 1,
+            "level": 2,
 
             "insert": [
                 {"column": "id"},

@@ -30,7 +30,7 @@ public class FileSender implements DasSender {
     }
 
     @Override
-    public void send(DasSerializable data) {
+    public synchronized void send(DasSerializable data) {
         byte[] buf = data.serialize();
 
         try {
