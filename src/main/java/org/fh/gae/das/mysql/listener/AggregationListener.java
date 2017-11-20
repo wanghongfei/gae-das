@@ -1,4 +1,4 @@
-package org.fh.gae.das.mysql;
+package org.fh.gae.das.mysql.listener;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import com.github.shyiko.mysql.binlog.event.DeleteRowsEventData;
@@ -9,6 +9,7 @@ import com.github.shyiko.mysql.binlog.event.TableMapEventData;
 import com.github.shyiko.mysql.binlog.event.UpdateRowsEventData;
 import com.github.shyiko.mysql.binlog.event.WriteRowsEventData;
 import lombok.extern.slf4j.Slf4j;
+import org.fh.gae.das.mysql.MysqlRowData;
 import org.fh.gae.das.template.DasTable;
 import org.fh.gae.das.template.TemplateHolder;
 import org.springframework.util.StringUtils;
@@ -43,10 +44,8 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
     /**
      * 子类覆盖此方法
      * @param eventData 事件数据
-     * @param dbName 库名
-     * @param tableName 表名
      */
-    protected abstract void doEvent(MysqlRowData eventData, String dbName, String tableName);
+    protected abstract void doEvent(MysqlRowData eventData);
 
     /**
      * 子类覆盖此方法, 提供TemplateHolder对象
@@ -59,12 +58,6 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
      * @return
      */
     protected abstract String getDbName();
-
-    /**
-     * 感兴趣的表名
-     * @return
-     */
-    protected abstract String getTargetTable();
 
     @Override
     public void onEvent(Event event) {
@@ -83,15 +76,20 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
                 return;
             }
 
-            if (!getDbName().equals(dbName) || !getTargetTable().equals(tableName)) {
-                log.info("filter {}:{}", dbName, tableName);
+            if (!getDbName().equals(dbName)) {
+                log.info("filter db: {}", dbName);
                 return;
             }
 
             log.info("trigger event {}", type.name());
 
             try {
-                doEvent(buildRowData(event.getData()), dbName, tableName);
+                MysqlRowData rowData = buildRowData(event.getData());
+                if (null == rowData) {
+                    return;
+                }
+
+                doEvent(rowData);
 
             } catch (Exception e) {
                 log.error(e.getMessage());
@@ -141,7 +139,7 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
         DasTable table = getTemplateHolder().getTable(tableName);
         if (null == table) {
             log.warn("table {} not found", tableName);
-            return MysqlRowData.empty;
+            return null;
         }
 
         Map<String, String> afterMap = new HashMap<>();
@@ -171,6 +169,7 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
 
         MysqlRowData rowData = new MysqlRowData();
         rowData.setAfter(afterMap);
+        rowData.setTable(table);
 
         return rowData;
 

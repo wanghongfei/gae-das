@@ -23,7 +23,7 @@
         },
         {
             "tableName": "acc",
-            "level": 1,
+            "level": 2,
 
             "insert": [
                 {"column": "id"},

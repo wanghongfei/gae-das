@@ -13,9 +13,13 @@ das:
     port: 3306
     username: root
     password:
+
+  # 增量索引配置
   store:
+    # 文件存储
     file:
       enable: true
+      # 文件名
       path: index/incr.idx
 
 logging:

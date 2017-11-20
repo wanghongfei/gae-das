@@ -1,7 +1,8 @@
-package org.fh.gae.das.mysql;
+package org.fh.gae.das.mysql.listener;
 
 import com.github.shyiko.mysql.binlog.event.EventType;
 import lombok.extern.slf4j.Slf4j;
+import org.fh.gae.das.mysql.MysqlRowData;
 import org.fh.gae.das.sender.FileSender;
 import org.fh.gae.das.template.DasTable;
 import org.fh.gae.das.template.OpType;
@@ -16,15 +17,15 @@ import java.util.Map;
 
 @Component
 @Slf4j
-public class UpdateEventListener extends AggregationListener {
+public class InsertEventListener extends AggregationListener {
     @Autowired
     private TemplateHolder holder;
 
     @Autowired
     private FileSender store;
 
-    public UpdateEventListener() {
-        super(EventType.UPDATE_ROWS);
+    public InsertEventListener() {
+        super(EventType.WRITE_ROWS);
     }
 
     @Override
@@ -33,33 +34,18 @@ public class UpdateEventListener extends AggregationListener {
     }
 
     @Override
-    protected String getTargetTable() {
-        return "new_table";
-    }
-
-    @Override
-    protected void doEvent(MysqlRowData eventData, String dbName, String tableName) {
-        if (null == eventData) {
-            return;
-        }
-
-        System.out.println(dbName + ", " + tableName + ", " + eventData);
-
-        DasTable table = holder.getTable(tableName);
-        if (null == table) {
-            log.warn("table {} not found", tableName);
-            return;
-        }
+    protected void doEvent(MysqlRowData eventData) {
+        DasTable table = eventData.getTable();
 
         // 构造层级对象
         DasLevel level = new TextDasLevel();
         level.setTable(table);
-        level.setOpType(OpType.UPDATE);
+        level.setOpType(OpType.ADD);
 
-        // 取出模板中UPDATE操作对应的字段列表
-        List<String> fieldList = table.getOpTypeFieldSetMap().get(OpType.UPDATE);
+        // 取出模板中INSERT操作对应的字段列表
+        List<String> fieldList = table.getOpTypeFieldSetMap().get(OpType.ADD);
         if (null == fieldList) {
-            log.warn("UPDATE not support for {}", tableName);
+            log.warn("INSERT not support for {}", table.getTableName());
             return;
         }
 

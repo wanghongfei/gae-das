@@ -2,6 +2,9 @@ package org.fh.gae.das.mysql;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import lombok.extern.slf4j.Slf4j;
+import org.fh.gae.das.mysql.listener.DeleteEventListener;
+import org.fh.gae.das.mysql.listener.InsertEventListener;
+import org.fh.gae.das.mysql.listener.UpdateEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +25,9 @@ public class BinlogClient {
 
     @Autowired
     private InsertEventListener insertEventListener;
+
+    @Autowired
+    private DeleteEventListener deleteEventListener;
 
     @PostConstruct
     public void connect() throws IOException {
@@ -45,6 +51,7 @@ public class BinlogClient {
 
             logClient.registerEventListener(updateEventListener);
             logClient.registerEventListener(insertEventListener);
+            logClient.registerEventListener(deleteEventListener);
 
             try {
                 logClient.connect();
