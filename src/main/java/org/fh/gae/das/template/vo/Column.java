@@ -7,4 +7,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Column {
     private String column;
+
+    private int position;
 }

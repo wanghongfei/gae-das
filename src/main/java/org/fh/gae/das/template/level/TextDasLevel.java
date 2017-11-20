@@ -29,6 +29,9 @@ public class TextDasLevel extends DasLevel {
             sb.append("\t");
         }
 
+        int len = sb.length();
+        sb.replace(len - 1, len, "");
+
         return sb.toString().getBytes();
     }
 }

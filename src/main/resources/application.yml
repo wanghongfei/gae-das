@@ -1,6 +1,10 @@
 spring:
   application:
     name: GAE-DAS
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/gae-das
+    username: root
 
 
 das:
@@ -13,3 +17,10 @@ das:
     file:
       enable: true
       path: index/incr.idx
+
+logging:
+  level:
+    org.fh.gae.das: debug
+  pattern:
+    console: "[%d{HH:mm:ss}] [%thread] %-5level %logger{36} - %msg%n"
+

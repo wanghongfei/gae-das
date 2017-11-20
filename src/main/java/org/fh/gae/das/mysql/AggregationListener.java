@@ -70,7 +70,12 @@ public abstract class AggregationListener<T> implements BinaryLogClient.EventLis
             this.dbName = "";
             this.tableName = "";
 
-            doEvent(data, dbName, tabName);
+            try {
+                doEvent(data, dbName, tabName);
+
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
         }
     }
 

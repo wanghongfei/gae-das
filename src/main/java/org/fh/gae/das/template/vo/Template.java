@@ -8,5 +8,6 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class Template {
+    private String database;
     private List<Table> tableList;
 }

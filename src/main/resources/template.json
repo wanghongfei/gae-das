@@ -1,4 +1,5 @@
 {
+    "database": "gae-das",
     "tableList": [
         {
             "tableName": "new_table",

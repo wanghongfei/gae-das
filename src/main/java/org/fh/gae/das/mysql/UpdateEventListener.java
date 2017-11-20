@@ -49,22 +49,39 @@ public class UpdateEventListener extends AggregationListener<UpdateRowsEventData
             return;
         }
 
+        // 构造层级对象
         DasLevel level = new TextDasLevel();
         level.setTable(table);
         level.setOpType(OpType.UPDATE);
 
+        // 取出模板中UPDATE操作对应的字段列表
         List<String> fieldList = table.getOpTypeFieldSetMap().get(OpType.UPDATE);
         if (null == fieldList) {
             log.warn("UPDATE not support for {}", tableName);
             return;
         }
 
+        // 遍历行
         for (Map.Entry<Serializable[], Serializable[]> entry : eventData.getRows()) {
+            // 取出新值
             Serializable[] after = entry.getValue();
+            int colLen = after.length;
 
-            for (int ix = 0; ix < after.length; ++ix) {
-                String colName = fieldList.get(ix);
-                level.getFieldValueMap().put(colName, after[ix].toString());
+            // 遍历值
+            for (int ix = 0; ix < colLen; ++ix) {
+                // 取出当前位置对应的列名
+                String colName = table.getPosMap().get(ix);
+                // 如果没有则说明不关心此列
+                if (null == colName) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("ignore position: {}", ix);
+                    }
+
+                    continue;
+                }
+
+                String colValue = after[ix].toString();
+                level.getFieldValueMap().put(colName, colValue);
             }
         }
 

@@ -16,4 +16,9 @@ public class DasTable {
      * 操作类型->字段顺序
      */
     private Map<OpType, List<String>> opTypeFieldSetMap = new HashMap<>();
+
+    /**
+     * 字段位置->字段名
+     */
+    private Map<Integer, String> posMap = new HashMap<>();
 }

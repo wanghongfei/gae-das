@@ -13,10 +13,13 @@ import java.util.Map;
 
 @Data
 public class DasTemplate {
+    private String database;
+
     private Map<String, DasTable> tableMap = new HashMap<>();
 
     public static DasTemplate parse(Template temp) {
         DasTemplate dasTemplate = new DasTemplate();
+        dasTemplate.setDatabase(temp.getDatabase());
 
         // 遍历表
         for (Table table : temp.getTableList()) {
