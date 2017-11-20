@@ -29,6 +29,11 @@ das:
       # 文件名
       path: incr.idx
 
+    kafka:
+      enable: false
+      topic: gae-idx
+      addr: 10.150.182.11:8092
+
 logging:
   level:
     org.fh.gae.das: debug

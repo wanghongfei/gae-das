@@ -1,5 +1,5 @@
 # GAE-DAS
-监听mysql binlog并生成GAE使用的增量索引, 输出至本地文件.
+监听mysql binlog并生成GAE使用的增量索引, 输出至本地文件或kafka.
 
 项目还处于开发状态
 
@@ -65,8 +65,9 @@
 mysql连接信息和binlog同步设置见`application.yml`文件
 
 ## 构建运行
+增量索引写到文件时, 除mysql连接信息和`template.json`外不需要额外配置:
 ```
 mvn clean package -Dmaven.test.skip=true
 java -jar gae-das.jar
 ```
-然后修改配置文件中的mysql连接信息和`template.json`模板即可
+增量索引写入kafka时, 需要配置kafka相关信息(见`application.yml`中`das.store.kafka`相关配置)

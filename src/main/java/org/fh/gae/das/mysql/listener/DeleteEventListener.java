@@ -3,7 +3,7 @@ package org.fh.gae.das.mysql.listener;
 import com.github.shyiko.mysql.binlog.event.EventType;
 import lombok.extern.slf4j.Slf4j;
 import org.fh.gae.das.mysql.MysqlRowData;
-import org.fh.gae.das.sender.FileSender;
+import org.fh.gae.das.sender.file.FileSender;
 import org.fh.gae.das.template.DasTable;
 import org.fh.gae.das.template.OpType;
 import org.fh.gae.das.template.TemplateHolder;

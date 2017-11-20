@@ -1,7 +1,8 @@
-package org.fh.gae.das.sender;
+package org.fh.gae.das.sender.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.fh.gae.das.exception.DasStoreException;
+import org.fh.gae.das.sender.DasSender;
 import org.fh.gae.das.template.DasSerializable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
