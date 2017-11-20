@@ -1,6 +1,7 @@
 spring:
   application:
     name: GAE-DAS
+
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     url: jdbc:mysql://localhost:3306/gae-das
@@ -14,13 +15,19 @@ das:
     username: root
     password:
 
+    # binlog文件名
+    binlog-name: ""
+    # binlog偏移量, -1表示从当前位置开始
+    position: -1
+
+
   # 增量索引配置
   store:
     # 文件存储
     file:
       enable: true
       # 文件名
-      path: index/incr.idx
+      path: incr.idx
 
 logging:
   level:

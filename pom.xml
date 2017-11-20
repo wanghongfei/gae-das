@@ -65,7 +65,7 @@
 
 
     <build>
-        <finalName>gae</finalName>
+        <finalName>gae-das</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
