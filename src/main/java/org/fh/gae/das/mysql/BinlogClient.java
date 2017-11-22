@@ -20,6 +20,8 @@ public class BinlogClient {
     @Autowired
     private MysqlBinlogConfig config;
 
+    private BinaryLogClient client;
+
     @Autowired
     private UpdateEventListener updateEventListener;
 
@@ -32,7 +34,7 @@ public class BinlogClient {
     @PostConstruct
     public void connect() throws IOException {
         new Thread(() -> {
-            BinaryLogClient logClient = new BinaryLogClient(
+            client = new BinaryLogClient(
                     config.getHost(),
                     config.getPort(),
                     config.getUsername(),
@@ -41,20 +43,20 @@ public class BinlogClient {
 
             String binlogName = config.getBinlogName();
             if (!binlogName.isEmpty()) {
-                logClient.setBinlogFilename(binlogName);
+                client.setBinlogFilename(binlogName);
             }
 
             long pos = config.getPosition().longValue();
             if (pos != -1) {
-                logClient.setBinlogPosition(pos);
+                client.setBinlogPosition(pos);
             }
 
-            logClient.registerEventListener(updateEventListener);
-            logClient.registerEventListener(insertEventListener);
-            logClient.registerEventListener(deleteEventListener);
+            client.registerEventListener(updateEventListener);
+            client.registerEventListener(insertEventListener);
+            client.registerEventListener(deleteEventListener);
 
             try {
-                logClient.connect();
+                client.connect();
                 log.info("mysql connected");
 
             } catch (IOException e) {
@@ -62,5 +64,13 @@ public class BinlogClient {
             }
 
         }).start();
+    }
+
+    public long getBinlogPos() {
+        return client.getBinlogPosition();
+    }
+
+    public String getBinlogName() {
+        return client.getBinlogFilename();
     }
 }

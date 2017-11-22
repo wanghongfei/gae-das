@@ -27,4 +27,9 @@ public class MysqlBinlogConfig {
      * binlog偏移量
      */
     private Long position = -1L;
+
+    /**
+     * binlog文件和偏移量保存位置
+     */
+    private String binlogPositionFile = "binlog.pos";
 }
