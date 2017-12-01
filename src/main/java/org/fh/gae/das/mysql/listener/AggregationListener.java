@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.fh.gae.das.mysql.MysqlRowData;
 import org.fh.gae.das.template.DasTable;
 import org.fh.gae.das.template.TemplateHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
@@ -25,39 +27,25 @@ import java.util.stream.Collectors;
 /**
  * listener继承此类, 可获得event的库名, 表名信息
  */
+@Component
 @Slf4j
-public abstract class AggregationListener implements BinaryLogClient.EventListener {
-    private EventType targetEventType;
-
+public class AggregationListener implements BinaryLogClient.EventListener {
     private String dbName;
     private String tableName;
 
+    @Autowired
+    private TemplateHolder templateHolder;
 
-    /**
-     * 构造对象时指定感兴趣的事件类型
-     * @param eventType 传null表示对所有事件感兴趣
-     */
-    protected AggregationListener(EventType eventType) {
-        this.targetEventType = eventType;
+    private Map<String, DasListener> listenerMap = new HashMap<>();
+
+
+    public void register(String dbName, String tableName, DasListener listener) {
+        this.listenerMap.put(genKey(dbName, tableName), listener);
     }
 
-    /**
-     * 子类覆盖此方法
-     * @param eventData 事件数据
-     */
-    protected abstract void doEvent(MysqlRowData eventData);
-
-    /**
-     * 子类覆盖此方法, 提供TemplateHolder对象
-     * @return
-     */
-    protected abstract TemplateHolder getTemplateHolder();
-
-    /**
-     * 感兴趣的库名
-     * @return
-     */
-    protected abstract String getDbName();
+    protected String genKey(String dbName, String tableName) {
+        return dbName + ":" + tableName;
+    }
 
     @Override
     public void onEvent(Event event) {
@@ -68,37 +56,44 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
             return;
         }
 
+        if (type != EventType.UPDATE_ROWS
+                && type != EventType.WRITE_ROWS
+                && type != EventType.DELETE_ROWS) {
+            return;
+        }
 
         // 触发子类doEvent()方法, 传递表名库名
-        if (type == targetEventType || null == targetEventType) {
-            if (StringUtils.isEmpty(dbName) || StringUtils.isEmpty(tableName)) {
-                log.error("no meta data event");
-                return;
-            }
-
-            if (!getDbName().equals(dbName)) {
-                log.info("filter db: {}", dbName);
-                return;
-            }
-
-            log.info("trigger event {}", type.name());
-
-            try {
-                MysqlRowData rowData = buildRowData(event.getData());
-                if (null == rowData) {
-                    return;
-                }
-
-                doEvent(rowData);
-
-            } catch (Exception e) {
-                log.error(e.getMessage());
-
-            } finally {
-                this.dbName = "";
-                this.tableName = "";
-            }
+        if (StringUtils.isEmpty(dbName) || StringUtils.isEmpty(tableName)) {
+            log.error("no meta data event");
+            return;
         }
+
+        String key = genKey(this.dbName, this.tableName);
+        DasListener listener = this.listenerMap.get(key);
+        if (null == listener) {
+            log.debug("skip {}", key);
+            return;
+        }
+
+        log.info("trigger event {}", type.name());
+
+        try {
+            MysqlRowData rowData = buildRowData(event.getData());
+            if (null == rowData) {
+                return;
+            }
+
+            rowData.setEventType(type);
+            listener.onEvent(rowData);
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+        } finally {
+            this.dbName = "";
+            this.tableName = "";
+        }
+
     }
 
     private void onTableMap(Event event) {
@@ -136,7 +131,7 @@ public abstract class AggregationListener implements BinaryLogClient.EventListen
      * @return
      */
     private MysqlRowData buildRowData(EventData eventData) {
-        DasTable table = getTemplateHolder().getTable(tableName);
+        DasTable table = templateHolder.getTable(tableName);
         if (null == table) {
             log.warn("table {} not found", tableName);
             return null;

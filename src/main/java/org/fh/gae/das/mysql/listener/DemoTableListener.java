@@ -6,46 +6,46 @@ import org.fh.gae.das.mysql.MysqlRowData;
 import org.fh.gae.das.sender.file.FileSender;
 import org.fh.gae.das.template.DasTable;
 import org.fh.gae.das.template.OpType;
-import org.fh.gae.das.template.TemplateHolder;
 import org.fh.gae.das.template.level.DasLevel;
 import org.fh.gae.das.template.level.TextDasLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 
 @Component
 @Slf4j
-public class InsertEventListener extends AggregationListener {
+public class DemoTableListener implements DasListener {
     @Autowired
-    private TemplateHolder holder;
+    private AggregationListener aggregationListener;
 
     @Autowired
     private FileSender store;
 
-    public InsertEventListener() {
-        super(EventType.WRITE_ROWS);
+    @PostConstruct
+    private void register() {
+        aggregationListener.register("gae-das", "acc", this);
     }
 
     @Override
-    protected String getDbName() {
-        return "gae-das";
-    }
+    public void onEvent(MysqlRowData eventData) {
+        log.info(eventData.toString());
 
-    @Override
-    protected void doEvent(MysqlRowData eventData) {
         DasTable table = eventData.getTable();
+        EventType eventType = eventData.getEventType();
 
         // 构造层级对象
         DasLevel level = new TextDasLevel();
         level.setTable(table);
-        level.setOpType(OpType.ADD);
+        OpType opType = OpType.of(eventType);
+        level.setOpType(opType);
 
-        // 取出模板中INSERT操作对应的字段列表
-        List<String> fieldList = table.getOpTypeFieldSetMap().get(OpType.ADD);
+        // 取出模板中该操作对应的字段列表
+        List<String> fieldList = table.getOpTypeFieldSetMap().get(opType);
         if (null == fieldList) {
-            log.warn("INSERT not support for {}", table.getTableName());
+            log.warn("{} not support for {}", opType, table.getTableName());
             return;
         }
 
@@ -53,15 +53,9 @@ public class InsertEventListener extends AggregationListener {
             String colName = entry.getKey();
             String colValue = entry.getValue();
 
-
             level.getFieldValueMap().put(colName, colValue);
         }
 
         store.send(level);
-    }
-
-    @Override
-    protected TemplateHolder getTemplateHolder() {
-        return this.holder;
     }
 }
