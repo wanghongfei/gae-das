@@ -26,7 +26,9 @@ import java.util.stream.Collectors;
 
 
 /**
- * listener继承此类, 可获得event的库名, 表名信息
+ * 聚合监听器;
+ * 主要功能有二，一为缓存TABLE_MAP事件，当ROW事件来到时可以跟上一个TABLE_MAP关联起来;
+ * 二为保存业务逻辑Listener, 每个业务Listener都必须通过register()方法注册起来
  */
 @Component
 @Slf4j
@@ -40,10 +42,16 @@ public class AggregationListener implements BinaryLogClient.EventListener {
     @Autowired
     private BinlogPositionStore positionStore;
 
-    private Map<String, DasListener> listenerMap = new HashMap<>();
+    private Map<String, BizListener> listenerMap = new HashMap<>();
 
 
-    public void register(String dbName, String tableName, DasListener listener) {
+    /**
+     * 注册监听器
+     * @param dbName 感兴趣的数据库名
+     * @param tableName 感兴趣的表名
+     * @param listener 监听器
+     */
+    public void register(String dbName, String tableName, BizListener listener) {
         this.listenerMap.put(genKey(dbName, tableName), listener);
     }
 
@@ -53,6 +61,7 @@ public class AggregationListener implements BinaryLogClient.EventListener {
 
     @Override
     public void onEvent(Event event) {
+        // 保存binlog位置
         positionStore.save(positionStore.extract());
 
         EventType type = event.getHeader().getEventType();
@@ -76,8 +85,9 @@ public class AggregationListener implements BinaryLogClient.EventListener {
             return;
         }
 
+        // 找出对当前表有兴趣的监听器
         String key = genKey(this.dbName, this.tableName);
-        DasListener listener = this.listenerMap.get(key);
+        BizListener listener = this.listenerMap.get(key);
         if (null == listener) {
             log.debug("skip {}", key);
             return;

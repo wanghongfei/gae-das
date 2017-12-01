@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Component
 @Slf4j
-public class DemoTableListener implements DasListener {
+public class DemoTableListener implements BizListener {
     @Autowired
     private AggregationListener aggregationListener;
 
