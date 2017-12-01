@@ -2,6 +2,8 @@ package org.fh.gae.das.mysql;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import lombok.extern.slf4j.Slf4j;
+import org.fh.gae.das.mysql.binlog.BinlogPosition;
+import org.fh.gae.das.mysql.binlog.BinlogPositionStore;
 import org.fh.gae.das.mysql.listener.AggregationListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,10 +23,13 @@ public class BinlogClient {
     private BinaryLogClient client;
 
     @Autowired
+    private BinlogPositionStore positionStore;
+
+    @Autowired
     private AggregationListener listener;
 
     @PostConstruct
-    public void connect() throws IOException {
+    public void connect() {
         new Thread(() -> {
             client = new BinaryLogClient(
                     config.getHost(),
@@ -33,15 +38,11 @@ public class BinlogClient {
                     config.getPassword()
             );
 
-            String binlogName = config.getBinlogName();
-            if (!binlogName.isEmpty()) {
-                client.setBinlogFilename(binlogName);
+            BinlogPosition position = resetBinlogPositionInOrder();
+            if (null != position) {
+                log.info("starting from previous position {}", position);
             }
 
-            long pos = config.getPosition().longValue();
-            if (pos != -1) {
-                client.setBinlogPosition(pos);
-            }
 
             client.registerEventListener(listener);
 
@@ -54,6 +55,28 @@ public class BinlogClient {
             }
 
         }).start();
+    }
+
+    private BinlogPosition resetBinlogPositionInOrder() {
+        // 先从文件中加载
+        BinlogPosition binlogPosition = positionStore.load();
+        if (null != binlogPosition) {
+            client.setBinlogFilename(binlogPosition.getBinlogName());
+            client.setBinlogPosition(binlogPosition.getPosition());
+            return binlogPosition;
+        }
+
+        // 从配置文件中加载
+        String binlogName = config.getBinlogName();
+        long pos = config.getPosition().longValue();
+        if (!binlogName.isEmpty() && -1 != pos) {
+            client.setBinlogFilename(binlogName);
+            client.setBinlogPosition(pos);
+
+            return new BinlogPosition(binlogName, pos);
+        }
+
+        return null;
     }
 
     public long getBinlogPos() {

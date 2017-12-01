@@ -19,6 +19,8 @@ das:
     binlog-name: ""
     # binlog偏移量, -1表示从当前位置开始
     position: -1
+    # binlog同步点保存文件名, 下次启动时会从该点继续
+    binlog-position-file: binlog.pos
 
 
   # 增量索引配置

@@ -10,6 +10,7 @@ import com.github.shyiko.mysql.binlog.event.UpdateRowsEventData;
 import com.github.shyiko.mysql.binlog.event.WriteRowsEventData;
 import lombok.extern.slf4j.Slf4j;
 import org.fh.gae.das.mysql.MysqlRowData;
+import org.fh.gae.das.mysql.binlog.BinlogPositionStore;
 import org.fh.gae.das.template.DasTable;
 import org.fh.gae.das.template.TemplateHolder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class AggregationListener implements BinaryLogClient.EventListener {
     @Autowired
     private TemplateHolder templateHolder;
 
+    @Autowired
+    private BinlogPositionStore positionStore;
+
     private Map<String, DasListener> listenerMap = new HashMap<>();
 
 
@@ -49,7 +53,11 @@ public class AggregationListener implements BinaryLogClient.EventListener {
 
     @Override
     public void onEvent(Event event) {
+        positionStore.save(positionStore.extract());
+
         EventType type = event.getHeader().getEventType();
+        log.debug("event type: {}", type);
+
         // 缓存表名和库名
         if (type == EventType.TABLE_MAP) {
             onTableMap(event);
