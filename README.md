@@ -9,7 +9,7 @@ GAE-DAS使用[mysql-binlog-connector](https://github.com/shyiko/mysql-binlog-con
 
 ## 架构示意
 
-![das](http://ovbyjzegm.bkt.clouddn.com/das.jpg)
+![das](http://ovbyjzegm.bkt.clouddn.com/das.png)
 
 - BinlogClient
 
