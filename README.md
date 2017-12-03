@@ -7,7 +7,30 @@ GAE-DAS使用[mysql-binlog-connector](https://github.com/shyiko/mysql-binlog-con
 
 项目还处于开发状态。
 
+## 架构示意
+
+![das](http://ovbyjzegm.bkt.clouddn.com/das.jpg)
+
+- BinlogClient
+
+[mysql-binlog-connector](https://github.com/shyiko/mysql-binlog-connector-java)提供，与Mysql通讯。
+
+- TemplateHolder
+
+解析用户配置的模板，创建并持有`DasTemplate` 对象
+
+- AggregationListener
+
+将`TABLE_MAP`和`UPDATE/INSERT/DELETE EVENT`封装成`MysqlRowData`并传递给下游业务监听器
+
+- BizListener
+
+用户实现的业务监听器，需先向`AggregationListener`进行注册，注册时声明自己对哪个库、哪张表感兴趣；同一个BizListener可以注册多次。`AggregationListener`在收到相关表的事件后会触发`onEvent()`方法。
+
+
+
 ## 模板
+
 通过配置模板`template.json`来指定索引如何生成(配置对哪些表中的哪些字段感兴趣):
 ```
 {
