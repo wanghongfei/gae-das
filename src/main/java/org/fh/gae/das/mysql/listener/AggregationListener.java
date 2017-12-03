@@ -46,7 +46,9 @@ public class AggregationListener implements BinaryLogClient.EventListener {
 
 
     /**
-     * 注册监听器
+     * 注册监听器;
+     * 同一个监听器可多次调用此方法来监听不同的库和表;
+     *
      * @param dbName 感兴趣的数据库名
      * @param tableName 感兴趣的表名
      * @param listener 监听器

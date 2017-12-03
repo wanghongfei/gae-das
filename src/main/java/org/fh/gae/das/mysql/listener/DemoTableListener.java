@@ -27,6 +27,7 @@ public class DemoTableListener implements BizListener {
     @PostConstruct
     private void register() {
         aggregationListener.register("gae-das", "acc", this);
+        aggregationListener.register("gae-das", "new_table", this);
     }
 
     @Override
