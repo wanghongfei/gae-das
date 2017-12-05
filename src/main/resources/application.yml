@@ -7,6 +7,9 @@ spring:
     url: jdbc:mysql://localhost:3306/gae-das
     username: root
 
+  profiles:
+    active: peer1
+
 
 das:
   mysql:
@@ -38,7 +41,8 @@ das:
 
 logging:
   level:
-    org.fh.gae.das: debug
+    org.fh.gae.das: info
+    org.springframework: error
   pattern:
     console: "[%d{HH:mm:ss}] [%thread] %-5level %logger{36} - %msg%n"
 

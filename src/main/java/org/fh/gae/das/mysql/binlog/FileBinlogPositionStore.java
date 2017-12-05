@@ -27,7 +27,7 @@ public class FileBinlogPositionStore implements BinlogPositionStore {
             return BinlogPosition.deserialize(loadBuf, 0, len);
 
         } catch (Exception e) {
-            log.error("binlog position failed to laod, {}", e);
+            log.error("binlog position failed to load, {}", e.getMessage());
         }
 
         return null;

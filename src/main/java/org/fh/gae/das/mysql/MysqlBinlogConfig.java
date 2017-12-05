@@ -18,6 +18,8 @@ public class MysqlBinlogConfig {
 
     private String password = "";
 
+    private long serverId = 1L;
+
     /**
      * binlog文件名
      */

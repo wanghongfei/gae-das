@@ -1,0 +1,8 @@
+das:
+  mysql:
+    server-id: 1
+
+  ha:
+    port: 10000
+    peer-host: 127.0.0.1
+    peer-port: 10001

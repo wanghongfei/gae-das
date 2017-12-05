@@ -2,6 +2,8 @@ package org.fh.gae.das.mysql;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import lombok.extern.slf4j.Slf4j;
+import org.fh.gae.das.ha.CoordinationService;
+import org.fh.gae.das.ha.heartbeat.BeatTimeHolder;
 import org.fh.gae.das.mysql.binlog.BinlogPosition;
 import org.fh.gae.das.mysql.binlog.BinlogPositionStore;
 import org.fh.gae.das.mysql.listener.AggregationListener;
@@ -28,7 +30,9 @@ public class BinlogClient {
     @Autowired
     private AggregationListener listener;
 
-    @PostConstruct
+    @Autowired
+    private CoordinationService coordinationService;
+
     public void connect() {
         new Thread(() -> {
             client = new BinaryLogClient(
@@ -45,10 +49,13 @@ public class BinlogClient {
 
 
             client.registerEventListener(listener);
+            client.setServerId(config.getServerId());
+
 
             try {
+                log.info("connecting to mysql");
                 client.connect();
-                log.info("mysql connected");
+                log.info("connection to mysql closed");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -57,8 +64,21 @@ public class BinlogClient {
         }).start();
     }
 
+    public void close() {
+        try {
+            client.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private BinlogPosition resetBinlogPositionInOrder() {
-        // 先从文件中加载
+        // 先检查是否有心跳包中的位置信息
+        if (null != BeatTimeHolder.position) {
+            return BeatTimeHolder.position;
+        }
+
+        // 从文件中加载
         BinlogPosition binlogPosition = positionStore.load();
         if (null != binlogPosition) {
             client.setBinlogFilename(binlogPosition.getBinlogName());
