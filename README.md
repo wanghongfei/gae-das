@@ -1,5 +1,5 @@
 # GAE-DAS
-监听mysql binlog并生成GAE使用的增量索引, 输出至本地文件或kafka. 
+监听mysql binlog并生成GAE使用的增量索引, 输出至本地文件或kafka，支持**主从热备高**可用方案。
 
 GAE-DAS使用[mysql-binlog-connector](https://github.com/shyiko/mysql-binlog-connector-java)库进行binlog监听。程序启动连接成功后会查询`information_schema`库的`columns`表来读取指定数据库所有表的元数据(列名，位置，数据类型等)，并使用该数据解析`TABLE_MAP`事件。因此，当数据表结构发生变化时，最好重启一下DAS。(除非新增列、位于所有列的最后且该列不涉及索引生成)
 
@@ -26,6 +26,19 @@ GAE-DAS使用[mysql-binlog-connector](https://github.com/shyiko/mysql-binlog-con
 - BizListener
 
 用户实现的业务监听器，需先向`AggregationListener`进行注册，注册时声明自己对哪个库、哪张表感兴趣；同一个BizListener可以注册多次。`AggregationListener`在收到相关表的事件后会触发`onEvent()`方法。
+
+## 双机热备
+
+GAE-DAS支持双机热备的高可用部署方案，同时部署两个实例，当一台挂掉后另一台可自动接替：
+
+![HA](http://ovbyjzegm.bkt.clouddn.com/das-ha.png)
+
+
+
+- 使用主从模式时，两个实例部署后会自动"商讨"谁主谁从
+- 确定主从关系后, master定时向slave发送心跳，心跳包中包含当前master的binlog位置信息
+- 当slave超过一定时间未收到心跳时，会自动从上次心跳包里的binlog位置开始监听binlog，变为master
+- 原master修复上线后，会自动变为slave
 
 
 
