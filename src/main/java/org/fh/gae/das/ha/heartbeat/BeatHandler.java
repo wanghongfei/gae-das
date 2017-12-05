@@ -1,20 +1,13 @@
 package org.fh.gae.das.ha.heartbeat;
 
-import com.alibaba.fastjson.JSON;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.fh.gae.das.ha.CoordinationService;
+import org.fh.gae.das.ha.NettyUtils;
 import org.fh.gae.das.mysql.binlog.BinlogPosition;
-import org.fh.gae.das.mysql.binlog.BinlogPositionStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -31,9 +24,6 @@ public class BeatHandler extends ChannelInboundHandlerAdapter {
     @Autowired
     private CoordinationService coordinationService;
 
-    @Autowired
-    private BinlogPositionStore positionStore;
-
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object o) throws Exception {
@@ -49,7 +39,7 @@ public class BeatHandler extends ChannelInboundHandlerAdapter {
                     BeatTimeHolder.position = new BinlogPosition(msg.getBinlog(), msg.getPosition());
                 }
 
-                ctx.writeAndFlush(buildResponse(BeatMessage.Builder.buildAck()));
+                ctx.writeAndFlush(NettyUtils.buildResponse(BeatMessage.Builder.buildAck()));
                 ctx.close();
 
                 return;
@@ -57,7 +47,7 @@ public class BeatHandler extends ChannelInboundHandlerAdapter {
 
             // 已经是master状态
             if (CoordinationService.Status.MASTER == coordinationService.status()) {
-                ctx.writeAndFlush(buildResponse(BeatMessage.Builder.buildMaster()));
+                ctx.writeAndFlush(NettyUtils.buildResponse(BeatMessage.Builder.buildMaster()));
                 ctx.close();
                 return;
             }
@@ -72,19 +62,19 @@ public class BeatHandler extends ChannelInboundHandlerAdapter {
                     BeatTimeHolder.position = new BinlogPosition(msg.getBinlog(), msg.getPosition());
                 }
 
-                ctx.writeAndFlush(buildResponse(BeatMessage.Builder.buildAck()));
+                ctx.writeAndFlush(NettyUtils.buildResponse(BeatMessage.Builder.buildAck()));
                 ctx.close();
 
                 return;
 
             }
 
-            ctx.writeAndFlush(buildResponse(BeatMessage.Builder.buildUnknown()));
+            ctx.writeAndFlush(NettyUtils.buildResponse(BeatMessage.Builder.buildUnknown()));
             ctx.close();
             return;
         }
 
-        ctx.writeAndFlush(buildResponse(BeatMessage.Builder.buildUnknown()));
+        ctx.writeAndFlush(NettyUtils.buildResponse(BeatMessage.Builder.buildUnknown()));
         ctx.close();
     }
 
@@ -112,47 +102,6 @@ public class BeatHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         log.error(cause.getMessage());
         ctx.close();
-    }
-
-    private void takeOver(ChannelHandlerContext ctx) {
-        if (coordinationService.status() != CoordinationService.Status.SLAVE) {
-            return;
-        }
-
-        log.info("master is down, take over");
-
-        BinlogPosition position = positionStore.load();
-        boolean result = coordinationService.tryMaster();
-        if (result) {
-            log.info("status changed to MASTER");
-
-        } else {
-            log.info("trying MASTER failed");
-        }
-    }
-
-    private void sendBeat(ChannelHandlerContext ctx) {
-        log.info("heartbeat sent");
-        ctx.writeAndFlush(buildResponse(BeatMessage.Builder.buildReport("report", 100)));
-        ctx.close();
-    }
-
-    public FullHttpResponse buildResponse(BeatMessage msg) {
-        String respJson = JSON.toJSONString(msg);
-        // byte[] buf = JSON.toJSONBytes(bidResponse, jsonSnakeConfig);
-
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                Unpooled.wrappedBuffer(respJson.getBytes())
-        );
-
-        response.headers().set(
-                HttpHeaderNames.CONTENT_TYPE.toString(),
-                "application/json;charset=utf8"
-        );
-
-        return response;
     }
 
 }

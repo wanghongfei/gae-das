@@ -51,7 +51,6 @@ public class HaServer {
                             socketChannel.pipeline().addLast("codec", new HttpServerCodec());
                             socketChannel.pipeline().addLast("aggregator", new HttpObjectAggregator(512 * 1024));
                             socketChannel.pipeline().addLast("jsonDecoder", decoder);
-                            socketChannel.pipeline().addLast("idle", new IdleStateHandler(5, 5, 5));
                             socketChannel.pipeline().addLast("handler", beatHandler);
                         }
                     });
