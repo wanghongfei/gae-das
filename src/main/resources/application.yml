@@ -39,6 +39,9 @@ das:
       topic: gae-idx
       addr: 10.150.182.11:8092
 
+  ha:
+    beat-interval: 5000
+
 logging:
   level:
     org.fh.gae.das: info

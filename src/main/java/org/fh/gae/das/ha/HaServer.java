@@ -35,6 +35,9 @@ public class HaServer {
     @Value("${das.ha.port}")
     private int port;
 
+    @Value("${das.ha.beat-interval}")
+    private int beatInterval;
+
     private NioEventLoopGroup group = new NioEventLoopGroup(1);
 
     private NioEventLoopGroup scheduleGroup = new NioEventLoopGroup(1);
@@ -71,7 +74,7 @@ public class HaServer {
 
     private void startBeat() {
         Random random = new Random();
-        scheduleGroup.scheduleAtFixedRate(beatTask, random.nextInt(1000), 5000, TimeUnit.MILLISECONDS);
+        scheduleGroup.scheduleAtFixedRate(beatTask, random.nextInt(1000), beatInterval, TimeUnit.MILLISECONDS);
     }
 
 }

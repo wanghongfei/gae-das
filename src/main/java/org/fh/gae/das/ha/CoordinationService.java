@@ -52,6 +52,9 @@ public class CoordinationService {
         httpClient = HttpClients.createDefault();
     }
 
+    /**
+     * 尝试让自己变成master, 如果成功则启动binlog client, 失败则变成slave
+     */
     public void startBinlogClient() {
         boolean master = tryMaster();
         if (master) {
@@ -82,6 +85,10 @@ public class CoordinationService {
         return false;
     }
 
+    /**
+     * 发送心跳
+     * @return
+     */
     public boolean heartbeat() {
         BinlogPosition position = positionStore.load();
         return sendReport(position.getBinlogName(), position.getPosition());
