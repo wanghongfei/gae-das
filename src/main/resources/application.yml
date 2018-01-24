@@ -37,7 +37,7 @@ das:
     kafka:
       enable: false
       topic: gae-idx
-      addr: 10.150.182.11:8092
+      addr: 127.0.0.1:8092
 
   ha:
     beat-interval: 5000
